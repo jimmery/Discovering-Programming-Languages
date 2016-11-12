@@ -1,0 +1,6 @@
+/* This will probably only be a comment file. 
+
+a. Which of these are advantages of throwing an exception over simply 
+   returning a distiguished error value (null)? 
+
+   

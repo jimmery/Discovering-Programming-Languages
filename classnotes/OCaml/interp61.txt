@@ -1,0 +1,197 @@
+
+Python 2.7.9 (v2.7.9:648dcafa7e5f, Dec 10 2014, 10:10:46) 
+[GCC 4.2.1 (Apple Inc. build 5666) (dot 3)] on darwin
+Type "help", "copyright", "credits" or "license" for more information.
+
+# immutable tuples, just like in OCaml
+
+>>> (1, "hi", False)
+(1, 'hi', False)
+>>> t = (1, "hi", False)
+>>> t[2]
+False
+>>> t[2] = True
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: 'tuple' object does not support item assignment
+
+
+# lists, like in OCaml, but they are mutable
+
+>>> [1, 2, 3]
+[1, 2, 3]
+>>> l = [1, 2, 3]
+>>> l = [1, 2, "hi", True]
+>>> l
+[1, 2, 'hi', True]
+>>> l[2]
+'hi'
+>>> l[2] = 'bye'
+>>> l
+[1, 2, 'bye', True]
+>>> l.reverse()
+>>> l
+[True, 'bye', 2, 1]
+
+
+# converting between types is easy
+
+>>> s = '34'
+>>> int(s)
+34
+>>> list(s)
+['3', '4']
+>>> tuple(s)
+('3', '4')
+
+# assignment copies pointers, not whole data structures
+# so it creates *aliases*, which you have to be aware of
+# due to the possibility of mutation
+
+>>> l
+[1, 2, 3]
+>>> l2
+[1, 2, 3]
+>>> l2[1] = 0
+>>> l2
+[1, 0, 3]
+>>> l
+[1, 0, 3]
+
+>>> l2 = list(l)
+>>> l
+[1, 0, 3]
+>>> l2
+[1, 0, 3]
+>>> l2[0] = 0
+>>> l
+[1, 0, 3]
+>>> l2
+[0, 0, 3]
+>>> 
+
+# overloading is convenient but also confusing...
+
+>>> import notes
+>>> notes.prodList([1,2,3,4])
+24
+>>> notes.prodList([1,2,3,4,5])
+120
+>>> notes.prodList([1,2,3,"hello",5])
+'hellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohellohello'
+>>> notes.prodList([1,2,3,"hello","hi"])
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "notes.py", line 32, in prodList
+    result *= i
+TypeError: can't multiply sequence by non-int of type 'str'
+>>> 
+
+
+# higher-order functions, just like in OCaml
+# map, filter, reduce are pre-defined
+
+>>> f = (lambda x: x+1)
+>>> map(f, [1,2,3,4,5])
+[2, 3, 4, 5, 6]
+>>> map(lambda x:x+1, [1,2,3,4,5])
+[2, 3, 4, 5, 6]
+>>> l = [[1,2],[3,4],[5]]
+>>> l2 = map(lambda lst: lst.reverse(), l)
+>>> l2
+[None, None, None]
+>>> l
+[[2, 1], [4, 3], [5]]
+>>> l = [(1,2),(3,4),(5,6)]
+
+# a limited form of pattern matching for iteration
+
+>>> for p in l:
+...   print p
+... 
+(1, 2)
+(3, 4)
+(5, 6)
+>>> 
+
+>>> l = [(1,2),(3,4),(5,6)]
+>>> for (x,y) in l:
+...   print (x+y)
+... 
+3
+7
+11
+
+
+>>> reduce(lambda x,y: x+y, [1,2,3,4,5])
+15
+
+# list comprehensions make it easy to do maps and filters
+
+>>> l = [1,2,3,4,5]
+>>> map(lambda x:x+1, l)
+[2, 3, 4, 5, 6]
+>>> [x+1 for x in l]
+[2, 3, 4, 5, 6]
+>>> map(lambda x:x+1, l)
+[2, 3, 4, 5, 6]
+>>> l
+[1, 2, 3, 4, 5]
+>>> 
+
+>>> map(lambda x:x+1, filter(lambda x: x>3, l))
+[5, 6]
+>>> [x+1 for x in l if x>3]
+[5, 6]
+>>> l1 = [1,2,3]
+>>> l2 = [4,5,6]
+>>> [(x,y) for x in l1 for y in l2]
+[(1, 4), (1, 5), (1, 6), (2, 4), (2, 5), (2, 6), (3, 4), (3, 5), (3, 6)]
+>>> 
+
+# dictionaries are like tuples where the data is accessed
+# by name rather than by position.
+# and dictionaries are mutable
+
+>>> {"name": "myrect", "width": 3.1, "height": 2.4}
+{'width': 3.1, 'name': 'myrect', 'height': 2.4}
+>>> r = {"name": "myrect", "width": 3.1, "height": 2.4}
+>>> r["name"]
+'myrect'
+>>> r["name"] = "todd"
+>>> r
+{'width': 3.1, 'name': 'todd', 'height': 2.4}
+>>> 
+>>> r["color"] = "green"
+>>> r
+{'color': 'green', 'width': 3.1, 'name': 'todd', 'height': 2.4}
+
+>>> reload(notes)
+<module 'notes' from 'notes.py'>
+>>> notes.frequency([1,2,3,1,4,2,4,4,3,5])
+{1: 2, 2: 2, 3: 2, 4: 3, 5: 1}
+>>> notes.frequency((1,2,3,1,4,2,4,4,3,5))
+{1: 2, 2: 2, 3: 2, 4: 3, 5: 1}
+>>> notes.frequency("hello what is happening")
+{'a': 2, ' ': 3, 'e': 2, 'g': 1, 'i': 2, 'h': 3, 'l': 2, 'o': 1, 'n': 2, 'p': 2, 's': 1, 't': 1, 'w': 1}
+
+
+(* mutation in OCaml through "references" *)
+
+# let x = ref 3;;
+val x : int ref = {contents = 3}
+# x + 4;;
+Error: This expression has type int ref
+       but an expression was expected of type int
+# !x;;
+- : int = 3
+
+# let three() = !x;;
+val three : unit -> int = <fun>
+# three();;
+- : int = 3
+# x := 5;;
+- : unit = ()
+# three();;
+- : int = 5
+# 

@@ -1,0 +1,204 @@
+(* Name: Jeffrey Jiang
+
+   UID: 904255069
+
+   Others With Whom I Discussed Things: Jonathan Hurwitz
+
+   Other Resources I Consulted: Piazza
+   
+*)
+
+(* EXCEPTIONS *)
+
+(* This is a marker for places in the code that you have to fill in.
+   Your completed assignment should never raise this exception. *)
+exception ImplementMe of string
+
+(* This exception is thrown when a type error occurs during evaluation
+   (e.g., attempting to invoke something that's not a function).
+   You should provide a useful error message.
+*)
+exception DynamicTypeError of string
+
+(* This exception is thrown when pattern matching fails during evaluation. *)  
+exception MatchFailure  
+
+(* EVALUATION *)
+
+(* See if a value matches a given pattern.  If there is a match, return
+   an environment for any name bindings in the pattern.  If there is not
+   a match, raise the MatchFailure exception.
+*)
+let rec patMatch (pat:mopat) (value:movalue) : moenv =
+  match (pat, value) with
+      (* an integer pattern matches an integer only when they are the same constant;
+	 no variables are declared in the pattern so the returned environment is empty *)
+      (IntPat(i), IntVal(j)) when i=j -> Env.empty_env()
+
+      (* similarly a boolean pattern matches a boolean only when they are the same;
+         no variables are declared in the pattern as well *)
+    | (BoolPat(i), BoolVal(j)) when i=j -> Env.empty_env()
+
+      (* wildcard pattern encompasses all cases, but does not create a variable name
+         for the value, so the returned environment is empty *)
+    | (WildcardPat, _)  -> Env.empty_env()
+
+      (* similar to the wildcard case, except attaches a variable name to the value *)
+    | (VarPat(s), mov) -> (Env.add_binding s mov (Env.empty_env()))
+
+      (* only matches if the two tuples have the same length. If they do, we patMatch
+         each individual element in the tuples, and then combine all of the resulting 
+         environments *)
+    | (TuplePat(i), TupleVal(j)) when (List.length i) = (List.length j)-> 
+        List.fold_left (Env.combine_envs) (Env.empty_env()) (List.map2 (patMatch) i j)
+
+      (* a data pattern matches with a value, first, only when the names of the data val are
+         the same. In the event that is true, then we just patMatch their values, if they exist. *)
+    | (DataPat(s1,opt1), DataVal(s2,opt2)) when s1=s2 -> 
+        (match (opt1, opt2) with
+          (None, None) -> Env.empty_env()
+        | (Some p, Some v) -> patMatch p v
+        | _ -> raise MatchFailure)
+
+    (* this case handles all cases that did not find a match above. This occurs because
+       we specified "when" clauses, limiting the cases each pattern, value combo is
+       matched. It also deals with cases where there's type mismatches *)
+    | _ -> raise MatchFailure
+    
+(* Evaluate an expression in the given environment and return the
+   associated value.  Raise a MatchFailure if pattern matching fails.
+   Raise a DynamicTypeError if any other kind of error occurs (e.g.,
+   trying to add a boolean to an integer) which prevents evaluation
+   from continuing.
+*)
+let rec evalExpr (e:moexpr) (env:moenv) : movalue =
+  match e with
+    (* an integer constant evaluates to itself *)
+    IntConst(i) -> IntVal(i)
+    
+    (* a boolean constant evaluates to itself *)
+  | BoolConst(b) -> BoolVal(b)
+
+    (* a variable evaluates to its stored value in the environment. 
+       if the value is not found in the environment, raise error. *)
+  | Var s -> 
+      (try Env.lookup s env
+      with Env.NotBound -> raise (DynamicTypeError "var not found"))
+
+    (* evaluates a binary operation expression, defined as only 
+       +, -, *, =, > between integers. Any other types used will 
+       create a dynamic type error. *)
+  | BinOp (e1, op, e2) -> 
+      let v1 = evalExpr e1 env in
+      let v2 = evalExpr e2 env in 
+      let operate x1 op x2 = 
+        match op with
+          Plus -> IntVal(x1 + x2)
+        | Minus -> IntVal(x1 - x2)
+        | Times -> IntVal(x1 * x2)
+        | Eq -> BoolVal(x1 = x2)
+        | Gt -> BoolVal(x1 > x2)
+      in
+
+      (match (v1, v2) with
+        (IntVal i1, IntVal i2) -> operate i1 op i2
+      | _ -> raise (DynamicTypeError "can only apply operations on integers"))
+
+    (* for any integer, performs the unary operator -x. For any other
+       type, this returns a dynamic type error. *)
+  | Negate (e0) -> 
+      let v0 = evalExpr e0 env in 
+      (match v0 with 
+        IntVal i -> IntVal (-i)
+      | _ -> raise (DynamicTypeError "can only negate integers"))
+
+    (* performs an if then else expression. 
+       most importantly, this expression only evaluates the value of 
+       each of its individual expressions if the boolean expression evaluates
+       to true. originally had a bug where this was not the case, causing 
+       recursive stack overflows. 
+
+       in addition, if the first expression (the boolean expression) is
+       not actually a boolean expression, then we raise a dynamic type error. *)
+  | If (e_check, e_then, e_else) ->
+      let v_check = evalExpr e_check env in 
+      (match v_check with
+        BoolVal b -> if b then evalExpr e_then env else evalExpr e_else env
+      | _ -> raise (DynamicTypeError "can only check booleans"))
+
+    (* creates a function val. seems to only be used in function declarations. 
+       saves the environment at the declaration of the function.  *)
+  | Function (p, e) -> FunctionVal (None, p, e, env)
+
+    (* takes a function value and an input and calls the function. 
+       the main point behind function calling is to maintain the environment
+       that was stored during declaration (as well as dealing with the 
+       recursive environment). does raise a dynamic type error, but 
+       it should never happen based on the parser, i think.  *)
+  | FunctionCall (e1, e2) -> 
+      let input = evalExpr e2 env in
+      let func = evalExpr e1 env in
+      
+      (match func with
+        FunctionVal (opt, p, e, en) -> 
+          let matchEnv = patMatch p input in
+          let env' = Env.combine_envs en matchEnv in
+          (match opt with
+            None -> evalExpr e env'
+          | Some s -> evalExpr e (Env.add_binding s func env'))
+      | _ -> raise (DynamicTypeError "unknown function call made"))
+
+    (* takes an expression and a list of patterns and attempts to match the
+       expression to a pattern. If it does, it adds the pattern into the 
+       environment and evaluates the new expression. otherwise, it 
+       will return a match failure. *)
+  | Match (e1, l) -> 
+      let v = evalExpr e1 env in
+
+      (match l with 
+        [] -> raise MatchFailure
+      | (p, e2)::t -> 
+          try
+            let matchEnv = patMatch p v in 
+            let env' = Env.combine_envs env matchEnv in
+            evalExpr e2 env'
+          with
+            MatchFailure -> (evalExpr (Match(e1,t)) env))
+
+    (* takes a tuple (implemented as a list) and returns a tuple value. 
+       we simply have to evaluate each expression in the tuple. *)
+  | Tuple l -> TupleVal(List.map (fun x -> evalExpr x env) l)
+
+    (* just as with tuple, we simply have to evaluate the expression 
+in the
+       optional value, if it exists, and place it in a DataVal. *)
+  | Data (s, opt) -> 
+      (match opt with
+        None -> DataVal(s, None)
+      | Some exp -> DataVal(s, Some (evalExpr exp env)))
+
+
+(* Evaluate a declaration in the given environment.  Evaluation
+   returns the name of the variable declared (if any) by the
+   declaration along with the value of the declaration's expression.
+*)
+let rec evalDecl (d:modecl) (env:moenv) : moresult =
+  match d with
+      (* a top-level expression has no name and is evaluated to a value *)
+      Expr(e) -> (None, evalExpr e env)
+
+      (* if there's a variable name given, attach the variable name *)
+    | Let (s, e) -> (Some s, evalExpr e env)
+
+      (* the idea is that let rec is only valid in the form of a function. 
+         therefore, we can match expression with a functional value defined
+         in evalExpr to have no string. then we can add the name, to indicate
+         that the function may have recursive properties. if the expression is
+         not a function, raise a dynamic type error *)
+    | LetRec (s, e) ->
+        let func = evalExpr e env in 
+
+        (match func with
+          FunctionVal(None, p, fexp, en) -> (Some s, FunctionVal(Some s, p, fexp, en))
+        | _ -> raise (DynamicTypeError "expected a function. "))
+

@@ -1,0 +1,162 @@
+(* Name: Jonathan David Hurwitz
+
+   UID: 804258351
+
+   Others With Whom I Discussed Things:
+
+   Other Resources I Consulted:
+   
+*)
+
+(* EXCEPTIONS *)
+
+(* This is a marker for places in the code that you have to fill in.
+   Your completed assignment should never raise this exception. *)
+exception ImplementMe of string
+
+(* This exception is thrown when a type error occurs during evaluation
+   (e.g., attempting to invoke something that's not a function).
+   You should provide a useful error message.
+*)
+exception DynamicTypeError of string
+
+(* This exception is thrown when pattern matching fails during evaluation. *)  
+exception MatchFailure  
+
+(* EVALUATION *)
+(* See if a value matches a given pattern.  If there is a match, return
+   an environment for any name bindings in the pattern.  If there is not
+   a match, raise the MatchFailure exception.
+*)
+let rec patMatch (pat:mopat) (value:movalue) : moenv =
+  match (pat, value) with
+      (* an integer pattern matches an integer only when they are the same constant;
+	 no variables are declared in the pattern so the returned environment is empty *)
+      (IntPat(i), IntVal(j)) when i=j 	    -> Env.empty_env ()
+    | (BoolPat(a), BoolVal(b)) when a=b	    -> Env.empty_env ()
+    | (WildcardPat, _)	       	    	    -> Env.empty_env ()
+    | (VarPat(s), v)    		    -> Env.add_binding s v (Env.empty_env ())
+    | (TuplePat(mpat_lst), TupleVal(moval_lst)) when (List.length mpat_lst)=(List.length moval_lst) ->
+        (match mpat_lst, moval_lst with
+	      [], [] -> Env.empty_env()
+	     | h1::t1, h2::t2 -> (Env.combine_envs (patMatch h1 h2) (patMatch (TuplePat(t1)) (TupleVal(t2))) ))
+    | (DataPat(str1, opt1), DataVal(str2, opt2)) ->  if(str1 = str2) then
+      (match opt1, opt2 with 
+      	    None, None -> Env.empty_env()
+	    | Some a, Some b -> (patMatch a b) )
+ 	   
+      else raise(MatchFailure)
+    
+    | _ -> raise MatchFailure
+    
+(* Evaluate an expression in the given environment and return the
+   associated value.  Raise a MatchFailure if pattern matching fails.
+   Raise a DynamicTypeError if any other kind of error occurs (e.g.,
+   trying to add a boolean to an integer) which prevents evaluation
+   from continuing.
+*)
+let rec evalExpr (e:moexpr) (env:moenv) : movalue =
+  match e with
+      (* an integer constant evaluates to itself *)
+    IntConst(i) -> IntVal(i)
+    
+    (*Bool evaluates to bool value of the expression*)
+    | BoolConst(b) -> BoolVal(b)
+    | Negate(e0) ->
+      let v0 = (evalExpr e0 env) in
+      	  (match v0 with
+	  	 IntVal i -> IntVal (-i)
+		 | _ -> raise (DynamicTypeError "Expression doesn't have type int."))
+
+    | If(boolexp, e1, e2) ->
+      
+      (match (evalExpr boolexp env) with 
+             BoolVal(b) ->
+         (match b with
+               true -> evalExpr e1 env
+         | false -> evalExpr e2 env)
+      | _ -> raise (DynamicTypeError "Not evaluating a boolean expression in if."))    
+ 
+    (*Function of mopat * moexpr *)
+    | Function(pat, exp) -> FunctionVal(None, pat, exp, env)
+
+    (*FunctionCall of moexpr * moexpr
+     * exp1 can be a function but exp2 has to be an arg *)
+    | FunctionCall(exp1, exp2) -> 
+(*      let e1 = evalExpr exp1 env in *)
+(*      let e2 = evalExpr exp2 env in *)
+      (match (evalExpr exp1 env), (evalExpr exp2 env) with
+        FunctionVal(str_op, pat, expr, enviro), arg_e2 ->
+          (match str_op with
+	  	None -> 
+		     evalExpr expr (Env.combine_envs enviro (patMatch pat arg_e2))
+	        | Some(str)-> 
+		  let enviro = (Env.combine_envs (Env.add_binding str (FunctionVal(Some(str), pat, expr, enviro)) enviro) (patMatch pat arg_e2)) 
+		      in (evalExpr expr enviro))
+	| _ -> raise (DynamicTypeError "Cannot match FunctionCall w/ FunctionVal."))
+
+    | Match(exp, lst) ->
+       (match lst with
+         [] -> raise MatchFailure
+	 | h::t -> let (x,y) = h in 
+	   try(evalExpr y (Env.combine_envs env (patMatch x (evalExpr exp env)))) with
+	   		MatchFailure -> (evalExpr (Match(exp,t)) env)
+			| _ -> raise (MatchFailure))
+
+
+    | Var(s) ->
+        (try Env.lookup s env
+        with Env.NotBound -> raise (DynamicTypeError "var not found"))
+    | BinOp(e1, op, e2) ->
+      let e1res = evalExpr e1 env in
+      let e2res = evalExpr e2 env in
+      (match (e1res, e2res) with
+      	    (IntVal(i), IntVal(j)) ->   
+	    	       (match op with
+		             	    Plus -> IntVal(i + j)
+				    | Minus -> IntVal(i - j)
+				    | Times -> IntVal(i * j)
+				    | Eq -> 
+				      if(i = j) then BoolVal(true)
+				      else BoolVal(false)
+			            | Gt ->
+				      if(i > j) then BoolVal(true)
+				      else BoolVal(false))
+
+            | (BoolVal(b1), BoolVal(b2)) ->
+	      		(match op with
+			       Eq -> if(b1 = b2) then BoolVal(true)
+			       	     else BoolVal(false)
+			       | _ -> raise (DynamicTypeError "Two booleans with invalid operation."))
+	    | (_, _) -> raise(DynamicTypeError "Error in BinOp matching."))
+
+    | Tuple(l) ->
+      (match l with
+      	    [] -> TupleVal([])
+	    | h::t -> TupleVal(List.map (fun x -> evalExpr x env) l))
+    | Data(s, opt) -> 
+      match opt with
+      None -> DataVal(s, None)
+      | Some v -> 
+        let evaluated = (evalExpr v env) in
+	DataVal(s, Some evaluated)
+
+    | _ -> raise (ImplementMe "expression evaluation not implemented")
+
+
+(* Evaluate a declaration in the given environment.  Evaluation
+   returns the name of the variable declared (if any) by the
+   declaration along with the value of the declaration's expression.
+*)
+let rec evalDecl (d:modecl) (env:moenv) : moresult =
+  match d with
+      (* a top-level expression has no name and is evaluated to a value *)
+      Expr(e) -> (None, evalExpr e env)
+    | Let(name, e) ->  (Some name, evalExpr e env)
+
+    | LetRec(name, e) -> (match e with
+      		       	  Function(a,b) -> (Some name, FunctionVal(Some name, a, b, env))
+			  | _ -> (Some name, evalExpr e env))
+
+    | _ -> raise (ImplementMe "let and let rec not implemented")
+

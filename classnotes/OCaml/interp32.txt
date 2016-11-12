@@ -1,0 +1,63 @@
+# #use "notes.ml";;
+type btree = Leaf | Node of btree * int * btree
+# Leaf;;
+- : btree = Leaf
+# Node;;
+Error: The constructor Node expects 3 argument(s),
+       but is applied here to 0 argument(s)
+# Node(Leaf, 34, Leaf);;
+- : btree = Node (Leaf, 34, Leaf)
+# let t1 = Node(Leaf, 34, Leaf);;
+val t1 : btree = Node (Leaf, 34, Leaf)
+# let t2 = Node(t1, 56, Leaf);;
+val t2 : btree = Node (Node (Leaf, 34, Leaf), 56, Leaf)
+# insert 45 t2;;
+- : btree = Node (Node (Leaf, 34, Node (Leaf, 45, Leaf)), 56, Leaf)
+# t2;;
+- : btree = Node (Node (Leaf, 34, Leaf), 56, Leaf)
+
+(* variable scoping *)
+
+# let x = 34 in
+  let y = x+1 in
+  let x = x + 32 in
+    x + y;;
+- : int = 101
+
+# 
+# let x = 45;;
+val x : int = 45
+# let f = function y -> x+y;;
+val f : int -> int = <fun>
+# f 3;;
+- : int = 48
+# let x = 12;;
+val x : int = 12
+# x;;
+- : int = 12
+# f 3;;
+- : int = 48
+# let x = "hello";;
+val x : string = "hello"
+# f 3;;
+- : int = 48
+# x;;
+- : string = "hello"
+# 
+
+# 
+# let add = fun x y -> x+y;;
+val add : int -> int -> int = <fun>
+# let add = function x -> function y -> x+y;;
+val add : int -> int -> int = <fun>
+# let addTwo = add 2;;
+val addTwo : int -> int = <fun>
+# x;;
+Error: Unbound value x
+# addTwo 7;;
+- : int = 9
+# let x = 12;;
+val x : int = 12
+# addTwo 7;;
+- : int = 9
+# 

@@ -1,0 +1,4 @@
+merge([],[],[]).
+merge([X1|XRest], [Y1|YRest], Z) :-
+    X1 < Y1,
+    merge(XRest, [Y1|YRest], [X1|Z]). 

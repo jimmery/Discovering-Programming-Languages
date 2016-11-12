@@ -1,0 +1,20 @@
+class MyInt {
+    int i;
+    MyInt(int k) { this.i = k }
+    void swap1(MyInt j) {
+	int tmp = j.i;
+	j = new MyInt(this.i);
+	this.i = tmp;
+    }
+
+    void swap2(MyInt j) {
+	MyInt tmp = j;
+	j.i = this.i;
+	this.i = tmp.i;
+    }
+
+    void swap3(int j) {
+	int tmp = j;
+	j = this.i;
+	this.i = tmp;
+    }

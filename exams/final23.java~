@@ -1,0 +1,56 @@
+interface Greeter {
+    void greet();
+}
+
+class Person implements Greeter {
+    public void greet() { this.hello(new Integer(3)); }
+    public void hello(Object o) { System.out.println("hello object"); }
+    //public void hello(String s) { System.out.println("hello " + s); }
+}
+
+class CSPerson extends Person {
+    public void hello(Object o) { System.out.println("hello world!"); }
+}
+
+class FrenchPerson extends Person {
+    public void hello(Object o) { System.out.println("bonjour object"); }
+    public void hello(String s) { System.out.println("bonjour " + s); }
+}
+
+class greetTest {
+    public static void main ( String[] args ) {
+	/* a - expected solution: no error. 'hello world!'
+	   this will call Person's greet method, which will 
+	   call CSPerson's hello, resulting a print of 'hello world!'
+	   this checks out with what is printed. */
+	Person pa = new CSPerson();
+	pa.greet();
+
+	/* b - expected solution: no error. 'hello world!' */
+	CSPerson pb = new CSPerson();
+	pb.greet();
+
+	/* c - expected solution: compile error. 
+	   Greeter has no hello method. */
+	Greeter gc = new FrenchPerson();
+	//gc.hello("joe");
+
+	/* d - expected solution: no error. 'bonjour joe' */
+	/* okay the actual answer here was 'bonjour object. 
+	   so note to self, a Person only sees the hello(Object) method.
+	   so it does not see the overloaded hello method with the String. 
+	   testing it with other cases, we see that if I add 
+	   hello(String) to Person, it is able to use FrenchPerson's 
+	   hello(String) method. 
+	   Therefore, I should remember that even though these functions
+	   have the same name, they actually do not have any relation 
+	   to each other, other than the fact that they have the same name.
+	*/
+	
+	Person pd = new FrenchPerson();
+	pd.hello("joe");
+
+	FrenchPerson pf = new FrenchPerson();
+	pf.hello("joe");
+    }
+}

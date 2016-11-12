@@ -1,0 +1,70 @@
+
+(* Higher order functions *)
+
+# List.map;;
+- : ('a -> 'b) -> 'a list -> 'b list = <fun>
+# List.filter;;
+- : ('a -> bool) -> 'a list -> 'a list = <fun>
+
+# List.fold_right;;
+- : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b = <fun>
+# List.fold_right (+) [1;2;3;4] 0;;
+- : int = 10
+
+# List.fold_right 
+  (fun s oldCount -> oldCount + String.length s)
+  ["hello"; "there"] 0;;
+- : int = 10
+
+# List.fold_right 
+  (fun s oldCount -> oldCount + String.length s)
+  ["hello"; "there"; "goodbye"] 0;;
+- : int = 17
+
+# List.for_all;;
+- : ('a -> bool) -> 'a list -> bool = <fun>
+# List.exists;;
+- : ('a -> bool) -> 'a list -> bool = <fun>
+
+(* Datatypes *)
+
+type optInt = Null | Nonnull of int
+# Null;;
+- : optInt = Null
+# Nonnull;;
+Error: The constructor Nonnull expects 1 argument(s),
+       but is applied here to 0 argument(s)
+# Nonnull 34;;
+- : optInt = Nonnull 34
+# (Nonnull 34) * 2;;
+Error: This expression has type optInt but an expression was expected of type
+         int
+
+# None;;
+- : 'a option = None
+# Some 34;;
+- : int option = Some 34
+# Some 34.34;;
+- : float option = Some 34.34
+# Some "hi";;
+- : string option = Some "hi"
+# Some (Some "hi");;
+- : string option option = Some (Some "hi")
+
+type mylist = Empty | Node of int * mylist
+# Node(1, Node(2, Node(3, Empty)));;
+- : mylist = Node (1, Node (2, Node (3, Empty)))
+# let rec sumList = 
+  function l ->
+    match l with
+      Empty -> 0
+    | Node(h,t) -> h + sumList t;;
+val sumList : mylist -> int = <fun>
+# sumList (Node(1, Node(2, Node(3, Empty))));;
+- : int = 6
+
+type btree = Leaf | TNode of btree * btree * int
+val treeSize : btree -> int = <fun>
+# treeSize (TNode(TNode(Leaf, Leaf, 1), Leaf, 34));;
+- : int = 2
+

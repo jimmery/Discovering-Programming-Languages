@@ -1,0 +1,6 @@
+interface Bool {
+    Bool logicalAnd(Bool b);
+    void ifThenElse(CodeBlock b1, CodeBlock b2);
+}
+
+interface CodeBlock { void execute(); }

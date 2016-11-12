@@ -1,0 +1,35 @@
+OCaml
+------
+
+a dialect of the ML functional programming language
+
+download:  ocaml.org
+
+Seas machines: /usr/local/cs/bin/ocaml
+
+declaring variables in the interpreter:  let X = E;;
+
+Expressions E:
+  C 
+  X
+  E1 op E2 
+  if E1 then E2 else E3 
+  match E with P1 -> E1 | P2 -> E2 | … | Pn -> En
+  function X -> E
+  []
+  E1::E2
+  [E1;E2;…;En]
+
+Patterns P:
+  C 
+  _
+  P when E
+  X    [declare a new variable]
+  []    [empty list pattern]	
+  P1::P2   [non-empty list pattern]
+  [P1;P2;…;Pn]
+
+op ::= + | - | * | =
+
+C ::= number
+X ::= variable

@@ -1,0 +1,51 @@
+
+One idea underlying Prolog: 
+  unification
+
+  - generalization of pattern matching
+
+syntax of terms:
+
+t ::= c | X | c(t1,...,tN)
+c ::= constant [lower-case identifier]
+X ::= variable [upper-case identifier]
+
+unification:
+t1 = t2
+  - produces an environment E from 
+  	variables to terms such that
+  	E(t1) is syntactically identical to
+  	E(t2)
+
+Cases:
+
+c = c --> {}
+
+X = term --> {X:t}
+
+t = X --> {X:t}
+
+/* pseudocode specialized to binary data structure */
+c(t1,t2) = c(t3,t4) -->
+   t1 = t3 --> E1
+   t2 = t4 --> E2
+   [if either returns "no", then "no"]
+   return E1 U E2
+
+else
+  "no"
+
+
+The U (union) operator is a bit more complicated:
+  1. It has to merge E1 and E2:
+     - whenever E1(X) is t1 and
+       E2(X) is t2, then the union
+       should map X to the result of 
+       unifying t1 and t2.
+       - or fail if that fails
+
+  2. The result E of the union should be in
+     *solved form*:
+     - if a variable is in the domain of E
+     	then it should not appear in the range
+     	

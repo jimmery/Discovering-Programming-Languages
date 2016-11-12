@@ -1,0 +1,8 @@
+interface Greeter {
+    void greet();
+}
+
+class Person implements Greeter {
+    public void greet() { this.hello(new Integer(3)); }
+    public void hello(Object o) { System.out.println("hello object"); }
+}

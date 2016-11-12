@@ -1,0 +1,160 @@
+# 
+# let double = function n -> n * 2;;
+val double : int -> int = <fun>
+# let quad = function n -> double n + double n;;
+val quad : int -> int = <fun>
+# quad 3;;
+- : int = 12
+
+(* local variables with let ... in ... *)
+
+# let quad = function n -> 
+               let d = double n
+                in d + d;;
+val quad : int -> int = <fun>
+# let x = 3 in 
+    let y = 4 in
+       x + y;;
+- : int = 7
+
+(* tuples *)
+
+# (1, "hi", true);;
+- : int * string * bool = (1, "hi", true)
+# (34);;
+- : int = 34
+# ();;
+- : unit = ()
+# let add = 
+# let add = (function (x,y) -> x+y);;
+val add : int * int -> int = <fun>
+# add(3,4);;
+- : int = 7
+# add (3,4);;
+- : int = 7
+# let p = (3,4);;
+val p : int * int = (3, 4)
+# add p;;
+- : int = 7
+# p;;
+- : int * int = (3, 4)
+# 
+# (p, "hi", (1,2,3));;
+- : (int * int) * string * (int * int * int) = ((3, 4), "hi", (1, 2, 3))
+# let three = function () -> 3;;
+val three : unit -> int = <fun>
+# three();;
+- : int = 3
+# three ();;
+- : int = 3
+# 
+
+(* more let examples *)
+
+#   (let x = 5 in x+6) * 2;;
+- : int = 22
+#   (let x = 5 in x+6) * x;;
+Error: Unbound value x
+
+(* first-class functions *)
+
+# let double = (function n -> n*2);;
+val double : int -> int = <fun>
+# let twice =
+    function (f,x) -> f(f x);;
+val twice : ('a -> 'a) * 'a -> 'a = <fun>
+# twice (double, 3);;
+- : int = 12
+# twice ((function x -> x*x), 3);;
+- : int = 81
+# 
+
+# double 3;;
+- : int = 6
+# let compose =
+    function (f,g,x) -> g(f(x));;
+val compose : ('a -> 'b) * ('b -> 'c) * 'a -> 'c = <fun>
+
+# compose(double, (function x -> x*x), 3);;
+- : int = 36
+
+# let returnsAdd () =
+    let add = function (x,y) -> x+y
+    in add;;
+val returnsAdd : unit -> int * int -> int = <fun>
+# let g = returnsAdd();;
+val g : int * int -> int = <fun>
+# g(3,4);;
+- : int = 7
+# (returnsAdd()) (3,4);;
+- : int = 7
+# returnsAdd () (3,4);;
+- : int = 7
+# 
+# let returnsAdd () =
+    function (x,y) -> x+y;;
+val returnsAdd : unit -> int * int -> int = <fun>
+# let returnsAdd =
+    function () ->
+      function (x,y) -> x+y;;
+val returnsAdd : unit -> int * int -> int = <fun>
+# 
+
+(* currying *)
+
+# let add = function (x,y) -> x+y;;
+val add : int * int -> int = <fun>
+# add (3,4);;
+- : int = 7
+# let add =
+    function x ->
+      (function y -> x+y);;
+val add : int -> int -> int = <fun>
+# (add 3) 4;;
+- : int = 7
+# add 3 4;;
+- : int = 7
+# let addToThree = add 3;;
+val addToThree : int -> int = <fun>
+# addToThree 4;;
+- : int = 7
+# addToThree 10;;
+- : int = 13
+# 
+# let add = 
+    fun x y -> x+y;;
+val add : int -> int -> int = <fun>
+# let add x y = x+y;;
+val add : int -> int -> int = <fun>
+# 
+
+
+(* mapping over a list *)
+
+# let rec incLst =
+    function l ->
+      match l with
+        [] -> []
+     |  h::t -> (h+1)::(incLst t);;
+val incLst : int list -> int list = <fun>
+# incLst [1;2;3];;
+- : int list = [2; 3; 4]
+# let rec gt2 =
+    function l ->
+      match l with
+       [] -> []
+     | h::t -> (h>2)::(gt2 t);;
+val gt2 : int list -> bool list = <fun>
+# gt2 [1;2;3];;
+- : bool list = [false; false; true]
+# 
+# List.map;;
+- : ('a -> 'b) -> 'a list -> 'b list = <fun>
+# List.map (function x -> x+1) [1;2;3];;
+- : int list = [2; 3; 4]
+# List.map (function x -> x>2) [1;2;3];;
+- : bool list = [false; false; true]
+# let incLst = List.map (function x -> x+1);;
+val incLst : int list -> int list = <fun>
+
+

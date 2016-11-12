@@ -1,0 +1,105 @@
+
+Variable scoping
+===========
+
+how can we declare variables?
+
+* top-level let:
+   let x = 5;;
+   scope of x: the rest of the program
+
+* let expression:
+   let x = 5 in x+2
+   let x = e1 in e2
+   scope of x: e2
+
+   (let x=5 in x+2) + x   -- unbound value x outside of let
+
+  let x = 34 in
+  let y = x+1 in
+  let x = x + 32 in
+  x + y
+
+  let rec x = e1 in e2
+  scope of x: e1 and e2
+  
+  
+* pattern matching:
+   match [1;2;3] with
+     h::t -> e1
+   | p2 -> e2
+   | ...
+   | pn -> en
+   scope of h and t: e1
+     
+* function parameters:
+   function x -> x+1
+   function x -> e
+   scope of x: e
+
+*static scoping* or *lexical scoping*:
+at compile time, you can determine, for each variable usage,
+which variable declaration it refers to.
+
+*the nearest enclosing definition in the program text*
+
+------------
+
+an environment is a representation of the scope:
+  - a map from variables to values
+
+{}  // environment is initially empty
+
+   let x = 45;;
+ 
+{x:45}
+
+   let f = function y -> x+y;;
+   
+{x:45, f:((function y ->x+y), {x:45})}
+// the function f keeps track of its static environment
+// it is a *closure* -- a pair of a function and environment
+
+   f 3
+       - lookup f in the environment
+        (function y ->x+y) 3
+	- get the function's lexical/static environment
+	{x:45}
+     	- substitute actual args for formal parameters
+	{x:45, y:3}
+	- evaluate the function body in that environment
+     	       x+y
+     	 returns 48
+
+   let x = 12;;
+
+{x:12, f:((function y ->x+y), {x:45})}
+
+   f 3
+   // still returns 48
+
+==========
+
+Another example: currying
+
+{}
+
+   let add = fun x y -> x+y
+
+{add : (fun x y ->x+y, {})}
+
+let addTwo = add 2
+       what happens?
+         1. lookup add in the environment
+	     (function x -> function y ->x+y) 2
+	  2. execute it in add's static environment {}
+	      bind x to 2:  {x:2}
+	      execute function body:
+	      result is the closure (function y ->x+y, {x:2})
+
+    {add : ...,  addTwo : (function y->x+y, {x:2})}
+
+key point: a variable's *lifetime* is different from its scope:
+  a variable can be live, because other code refers to it,
+  even if it's out of scope
+  

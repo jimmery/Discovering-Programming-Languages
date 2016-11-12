@@ -1,0 +1,95 @@
+
+Types
+-----
+
+a type is a set of values, along with associated operations on those
+values
+
+int: +, -, >
+
+bool: =, !=, &&, ||, if, ...
+
+int -> bool : set of all functions that, given an arg of type int,
+produce a result of type bool
+
+Design choices for types in a programming language:
+
+1. Static vs. dynamic typechecking
+
+Static typechecking: Every program expression is given a type at
+compile time.
+  - C, C++, Java, OCaml, C#
+
+Dynamic typechecking: Types are not explicit in the program.  At run
+time, during evaluation, all arguments to primitive operations are
+checked to be of the right type on demand.
+  - Python, JavaScript, PHP, Lisp/Scheme
+
+Advantages of static typechecking:
+
+* early error detection
+   "type errors" are caught at compile time
+     - invoking an operation with args of the wrong type
+    these errors cannot occur at run time
+    
+* program documentation
+   types are a checked form of comments
+   
+* enforce user-defined abstractions
+  - classes/data types in OCaml
+
+* efficiency
+   no run-time typechecking
+
+Disadvantages of static typechecking:
+
+* some loss of flexibility
+  - your code has to be checkable by the static type system
+     - no hetergeneous lists
+        - all list elements have the have the same type
+     - how to address?
+       - make your own data type for the list elements, e.g.
+         type intorstring = I of int | S of string
+	
+
+2.  Strong vs. weak typechecking
+     - sound vs. unsound typechecking
+
+* Strongly typed: The typechecker is correct.
+   - there is no possibility of type errors at run time
+   - you can never get into an undefined state at run time
+
+* Weakly typed: The language is broken.
+   - program can typecheck but still have type errors at run time
+   - at which point, you are in an undefined state
+
+C and C++ are the *only* weakly typed languages
+  - unchecked type casts
+  - memory errors:
+     - buffer overflow
+        - out-of-bounds array access
+     - dangling pointers
+     - uninitialized variables
+
+All other languages are *memory safe* through run-time checking:
+ - arrays carry around their length
+    - every array access is preceded by a bounds check
+ - no direct access to pointers
+   - allocation is implicit
+   - deallocation is done by the garbage collector
+
+
+Static/Strong:  Java, OCaml, C#
+Dynamic/Strong: Python, JavaScript, PHP, Lisp
+
+Static/Weak: C and C++
+Dynamic/Weak: ???
+
+
+3. Static typechecking vs. Static type inference
+   Typechecking requires program annotations on all variables
+     - formal parameters, local variables
+
+   Type inference infers types with no annotations
+    - still at compile time
+
