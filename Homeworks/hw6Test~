@@ -1,5 +1,0 @@
-consult(hw6).
-findall(Y, duplist([1,2,3], Y), L), L = [[1,1,2,2,3,3]].
-
-findall(Y, subseq(Y, [1,2]), L),
-findall(L, permutation(L, [[],[1],[2],[1,2]]), M).
